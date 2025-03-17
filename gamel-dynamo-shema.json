@@ -1,0 +1,17 @@
+[
+  {
+    "IndexName": "UserIdIndex",
+    "KeySchema": [
+      { "AttributeName": "userId", "KeyType": "HASH" }
+    ],
+    "Projection": { "ProjectionType": "ALL" }
+  },
+  {
+    "IndexName": "ProductIdRatingIndex",
+    "KeySchema": [
+      { "AttributeName": "productId", "KeyType": "HASH" },
+      { "AttributeName": "rating", "KeyType": "RANGE" }
+    ],
+    "Projection": { "ProjectionType": "ALL" }
+  }
+]
