@@ -15,5 +15,8 @@ spring:
       host: gamel-redis-container
       port: 6379
 
-aws:
+dynamodb:
+  endpoint: http://gamel-dynamodb:8000
   region: ap-northeast-2
+  accessKey: dummy
+  secretKey: dummy

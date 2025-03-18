@@ -1,0 +1,42 @@
+{
+  "TableName": "ProductReviews",
+  "AttributeDefinitions": [
+    { "AttributeName": "productId", "AttributeType": "N" },
+    { "AttributeName": "reviewId", "AttributeType": "N" },
+    { "AttributeName": "userId", "AttributeType": "N" },
+    { "AttributeName": "rating", "AttributeType": "N" }
+  ],
+  "KeySchema": [
+    { "AttributeName": "productId", "KeyType": "HASH" },
+    { "AttributeName": "reviewId", "KeyType": "RANGE" }
+  ],
+  "ProvisionedThroughput": {
+    "ReadCapacityUnits": 10,
+    "WriteCapacityUnits": 10
+  },
+  "GlobalSecondaryIndexes": [
+    {
+      "IndexName": "UserIdIndex",
+      "KeySchema": [
+        { "AttributeName": "userId", "KeyType": "HASH" }
+      ],
+      "Projection": { "ProjectionType": "ALL" },
+      "ProvisionedThroughput": {
+        "ReadCapacityUnits": 10,
+        "WriteCapacityUnits": 10
+      }
+    },
+    {
+      "IndexName": "ProductIdRatingIndex",
+      "KeySchema": [
+        { "AttributeName": "productId", "KeyType": "HASH" },
+        { "AttributeName": "rating", "KeyType": "RANGE" }
+      ],
+      "Projection": { "ProjectionType": "ALL" },
+      "ProvisionedThroughput": {
+        "ReadCapacityUnits": 10,
+        "WriteCapacityUnits": 10
+      }
+    }
+  ]
+}

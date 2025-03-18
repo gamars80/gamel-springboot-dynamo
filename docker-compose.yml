@@ -1,5 +1,4 @@
 version: '3.8'
-
 services:
   mysql:
     image: mysql:8.0.30
@@ -33,19 +32,27 @@ services:
     networks:
       - backend_network
 
-  dynamodb-local:
+  dynamodb:
     image: amazon/dynamodb-local
     container_name: gamel-dynamodb
     ports:
       - "8000:8000"
+    command: [ "-jar", "DynamoDBLocal.jar", "-sharedDb", "-dbPath", "/home/dynamodblocal/data" ]
+    volumes:
+      - ./dynamodb_data:/home/dynamodblocal/data
+    networks:
+      - backend_network
 
   springboot-app:
     build:
       context: .
-      dockerfile: DockerFile  # Dockerfile의 실제 이름, 보통 "Dockerfile" (대소문자 주의)
+      dockerfile: DockerFile
     container_name: gamel-springboot-container
     ports:
       - "8080:8080"
+    # 불필요한 볼륨 마운트 제거
+    # volumes:
+    #   - ./:/app
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://gamel-mysql-container:3306/gamel
       SPRING_DATASOURCE_USERNAME: root

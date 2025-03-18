@@ -18,11 +18,19 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'com.fasterxml.jackson.core:jackson-databind' // Redis 직렬화용
     runtimeOnly 'mysql:mysql-connector-java'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
     implementation 'mysql:mysql-connector-java:8.0.33'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
-    // AWS SDK for DynamoDB (AWS SDK v2)
-    implementation 'software.amazon.awssdk:dynamodb'
+    implementation 'com.amazonaws:aws-java-sdk-dynamodb:1.12.539'
+    // AWS SDK v1 (DynamoDBMapper 사용)
+    implementation 'com.amazonaws:aws-java-sdk-dynamodb:1.12.500'
+
+    // Redisson Spring Boot Starter (버전은 최신 안정 버전 사용)
+    implementation 'org.redisson:redisson-spring-boot-starter:3.17.6'
+
+
+    // DynamoDBMapper를 사용하는 경우 AWS SDK 내 제공되는 기능 사용
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
 }
