@@ -1,45 +1,57 @@
 package com.example.gamel.service;
-
-import com.amazonaws.services.dynamodbv2.datamodeling.QueryResultPage;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.example.gamel.dto.PaginatedProductReview;
-import com.example.gamel.entity.ProductReview;
-import com.example.gamel.exceptions.ResourceNotFoundException;
-import com.example.gamel.repository.ProductReviewRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.example.gamel.dto.PaginatedProductReview;
+import com.example.gamel.entity.dynamo.ProductReview;
+import com.example.gamel.exceptions.ResourceNotFoundException;
+import com.example.gamel.repository.ProductReviewRepository;
+import org.springframework.stereotype.Service;
+
+import lombok.RequiredArgsConstructor;
+import software.amazon.awssdk.enhanced.dynamodb.Key;
+import software.amazon.awssdk.enhanced.dynamodb.model.Page;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+
 @Service
 @RequiredArgsConstructor
 public class ProductReviewService {
+
     private final ProductReviewRepository productReviewRepository;
 
-    public void addReview(ProductReview review){
+    public void addReview(ProductReview review) {
         productReviewRepository.save(review);
     }
 
-    public List<ProductReview> getReviewsByProductId(Long productId){
+    public List<ProductReview> getReviewsByProductId(Long productId) {
         return productReviewRepository.findByProductId(productId);
     }
 
-    public PaginatedProductReview getPaginatedReviews(Long productId, int limit, Map<String, AttributeValue> exclusiveStartKey) {
-        QueryResultPage<ProductReview> resultPage = productReviewRepository.findByProductIdWithPagination(productId, limit, exclusiveStartKey);
+    public PaginatedProductReview getPaginatedReviews(Long productId, int limit, Map<String, AttributeValue> exclusiveStartKeyMap) {
+        Key exclusiveStartKey = null;
+        if (exclusiveStartKeyMap != null && !exclusiveStartKeyMap.isEmpty()) {
+            // 예시: 파티션키는 "productId", 정렬키는 "reviewId"로 가정 (테이블 설계에 따라 변경)
+            String partitionVal = exclusiveStartKeyMap.get("productId").s();
+            String sortVal = exclusiveStartKeyMap.get("reviewId").s();
+            exclusiveStartKey = Key.builder()
+                    .partitionValue(partitionVal)
+                    .sortValue(sortVal)
+                    .build();
+        }
+
+        Page<ProductReview> resultPage = productReviewRepository.findByProductIdWithPagination(productId, limit, exclusiveStartKey);
 
         PaginatedProductReview paginatedResult = new PaginatedProductReview();
-        paginatedResult.setReviews(resultPage.getResults());
-        // 변환 메서드를 통해 단순화된 LastEvaluatedKey 설정
-        paginatedResult.setLastEvaluatedKey(simplifyLastEvaluatedKey(resultPage.getLastEvaluatedKey()));
+        paginatedResult.setReviews(resultPage != null ? resultPage.items() : Collections.emptyList());
+        paginatedResult.setLastEvaluatedKey(simplifyLastEvaluatedKey(resultPage != null ? resultPage.lastEvaluatedKey() : null));
 
         return paginatedResult;
     }
 
-
-    public List<ProductReview> getReviewsByUserId(Long userId){
+    public List<ProductReview> getReviewsByUserId(Long userId) {
         return productReviewRepository.findByUserId(userId);
     }
 
@@ -61,15 +73,14 @@ public class ProductReviewService {
         if (lastEvaluatedKey != null) {
             for (Map.Entry<String, AttributeValue> entry : lastEvaluatedKey.entrySet()) {
                 AttributeValue value = entry.getValue();
-                // 숫자형(n)이 있으면 그 값을, 그렇지 않으면 문자열(s)을 사용
-                if (value.getN() != null) {
-                    simpleMap.put(entry.getKey(), value.getN());
-                } else if (value.getS() != null) {
-                    simpleMap.put(entry.getKey(), value.getS());
+                if (value.n() != null && !value.n().isEmpty()) {
+                    simpleMap.put(entry.getKey(), value.n());
+                } else if (value.s() != null && !value.s().isEmpty()) {
+                    simpleMap.put(entry.getKey(), value.s());
                 }
             }
         }
         return simpleMap;
     }
-
 }
+

@@ -1,8 +1,7 @@
 package com.example.gamel.dto;
 
 
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.example.gamel.entity.ProductReview;
+import com.example.gamel.entity.dynamo.ProductReview;
 
 import java.util.List;
 import java.util.Map;

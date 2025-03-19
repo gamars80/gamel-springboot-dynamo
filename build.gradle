@@ -22,10 +22,6 @@ dependencies {
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
-    implementation 'com.amazonaws:aws-java-sdk-dynamodb:1.12.539'
-    // AWS SDK v1 (DynamoDBMapper 사용)
-    implementation 'com.amazonaws:aws-java-sdk-dynamodb:1.12.500'
-
     // Redisson Spring Boot Starter (버전은 최신 안정 버전 사용)
     implementation 'org.redisson:redisson-spring-boot-starter:3.17.6'
 
@@ -33,4 +29,12 @@ dependencies {
     // DynamoDBMapper를 사용하는 경우 AWS SDK 내 제공되는 기능 사용
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // AWS SDK BOM 사용 (버전은 필요에 따라 최신 버전으로 변경)
+    implementation platform('software.amazon.awssdk:bom:2.20.72')
+
+    // DynamoDB 클라이언트 라이브러리
+    implementation 'software.amazon.awssdk:dynamodb'
+    // DynamoDB Enhanced Client (애노테이션이 포함된 라이브러리)
+    implementation 'software.amazon.awssdk:dynamodb-enhanced'
 }

@@ -1,6 +1,6 @@
 package com.example.gamel.dto;
 
-import com.example.gamel.entity.ProductReview;
+import com.example.gamel.entity.dynamo.ProductReview;
 import lombok.Data;
 
 @Data

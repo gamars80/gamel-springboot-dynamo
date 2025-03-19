@@ -1,14 +1,13 @@
 package com.example.gamel.contoller;
 
-
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.example.gamel.dto.PaginatedProductReview;
-import com.example.gamel.entity.ProductReview;
+import com.example.gamel.entity.dynamo.ProductReview;
 import com.example.gamel.service.ProductReviewService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import java.util.HashMap;
 import java.util.List;

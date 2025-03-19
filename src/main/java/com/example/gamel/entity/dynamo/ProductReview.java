@@ -1,39 +1,50 @@
-package com.example.gamel.entity;
+package com.example.gamel.entity.dynamo;
 
-import com.amazonaws.services.dynamodbv2.datamodeling.*;
-import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbAttribute;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSecondaryPartitionKey;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSecondarySortKey;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortKey;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Getter;
 
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
-@DynamoDBTable(tableName = "ProductReviews")
+@DynamoDbBean
 public class ProductReview {
 
-    @NotNull(message = "Product ID is required")
-    @DynamoDBHashKey(attributeName = "productId")
+    // 메인 테이블 파티션 키 및 ProductIdRatingIndex의 파티션 키로 사용
+    @Getter(onMethod_ = {
+            @DynamoDbPartitionKey,
+            @DynamoDbSecondaryPartitionKey(indexNames = "ProductIdRatingIndex")
+    })
     private Long productId;
 
-    @DynamoDBRangeKey(attributeName = "reviewId")
+    // 메인 테이블의 정렬 키
+    @Getter(onMethod_ = {@DynamoDbSortKey})
     private Long reviewId;
 
-    @NotNull(message = "User ID is required")
-    @DynamoDBAttribute(attributeName = "userId")
+    // UserIdIndex의 파티션 키로 사용
+    @Getter(onMethod_ = {
+            @DynamoDbAttribute("userId"),
+            @DynamoDbSecondaryPartitionKey(indexNames = "UserIdIndex")
+    })
     private Long userId;
 
-    @NotNull(message = "Rating is required")
-    @DynamoDBAttribute(attributeName = "rating")
+    // ProductIdRatingIndex의 정렬 키로 사용
+    @Getter(onMethod_ = {
+            @DynamoDbAttribute("rating"),
+            @DynamoDbSecondarySortKey(indexNames = "ProductIdRatingIndex")
+    })
     private Long rating;
 
-    @DynamoDBAttribute(attributeName = "reviewText")
+    @Getter(onMethod_ = {@DynamoDbAttribute("reviewText")})
     private String reviewText;
 
-    @DynamoDBAttribute(attributeName = "content")
+    @Getter(onMethod_ = {@DynamoDbAttribute("content")})
     private String content;
 
-    @DynamoDBAttribute(attributeName = "createdAt")
+    @Getter(onMethod_ = {@DynamoDbAttribute("createdAt")})
     private String createdAt;
 }

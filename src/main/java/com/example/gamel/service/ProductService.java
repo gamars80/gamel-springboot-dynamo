@@ -4,8 +4,7 @@ import com.example.gamel.dto.PageDto;
 import com.example.gamel.dto.ProductDto;
 import com.example.gamel.dto.ProductReviewDto;
 import com.example.gamel.entity.Product;
-import com.example.gamel.entity.ProductReview;
-import com.example.gamel.exceptions.UnableToAcquireLockException;
+import com.example.gamel.entity.dynamo.ProductReview;
 import com.example.gamel.repository.ProductRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -17,11 +16,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -34,6 +30,7 @@ public class ProductService {
     private final ProductCacheService productCacheService;
     private final ProductReviewService productReviewService;
     private final RedissonClient redissonClient;
+    private final SearchService searchService;
 
 
     // 상품 목록 조회 – 페이지 번호별 캐싱 (페이지당 20개)
@@ -145,4 +142,11 @@ public class ProductService {
         }
     }
 
+
+    public List<Product> searchProducts(String keyword) {
+        // 상품 검색 전 검색어 기록
+        searchService.recordSearch(keyword);
+        // MySQL에서 상품 검색 (대소문자 무시, 이름에 keyword 포함)
+        return productRepository.findByNameContainingIgnoreCase(keyword);
+    }
 }

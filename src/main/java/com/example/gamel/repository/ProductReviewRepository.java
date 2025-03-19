@@ -1,78 +1,101 @@
 package com.example.gamel.repository;
 
 
-import com.amazonaws.services.dynamodbv2.datamodeling.QueryResultPage;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.example.gamel.entity.ProductReview;
+import com.example.gamel.entity.dynamo.ProductReview;
 import org.springframework.stereotype.Repository;
+import software.amazon.awssdk.enhanced.dynamodb.*;
+import software.amazon.awssdk.enhanced.dynamodb.model.Page;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
+
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
 
 @Repository
 public class ProductReviewRepository {
 
-    private final DynamoDBMapper dynamoDBMapper;
+    private final DynamoDbTable<ProductReview> productReviewTable;
+    private final DynamoDbIndex<ProductReview> productIdRatingIndex;
+    private final DynamoDbIndex<ProductReview> userIdIndex;
 
-    public ProductReviewRepository(DynamoDBMapper dynamoDBMapper) {
-        this.dynamoDBMapper = dynamoDBMapper;
+    public ProductReviewRepository(DynamoDbEnhancedClient enhancedClient) {
+        // 테이블 이름과 스키마는 실제 DynamoDB 설정에 맞게 변경하세요.
+        this.productReviewTable = enhancedClient.table("ProductReviews", TableSchema.fromBean(ProductReview.class));
+        this.productIdRatingIndex = productReviewTable.index("ProductIdRatingIndex");
+        this.userIdIndex = productReviewTable.index("UserIdIndex");
     }
 
+
+    // 저장
     public void save(ProductReview review) {
-        dynamoDBMapper.save(review);
-    }
-
-    public ProductReview findById(String reviewId) {
-        return dynamoDBMapper.load(ProductReview.class, reviewId);
+        productReviewTable.putItem(review);
     }
 
     public List<ProductReview> findByProductId(Long productId) {
-        DynamoDBQueryExpression<ProductReview> queryExpression = new DynamoDBQueryExpression<ProductReview>()
-                .withIndexName("ProductIdRatingIndex")
-                .withConsistentRead(false)
-                .withKeyConditionExpression("productId = :v_productId")
-                .withExpressionAttributeValues(Map.of(":v_productId", new AttributeValue().withN(String.valueOf(productId))))
-                .withScanIndexForward(false);
-
-        return dynamoDBMapper.query(ProductReview.class, queryExpression);
-    }
-
-
-    public QueryResultPage<ProductReview> findByProductIdWithPagination(Long productId, int limit, Map<String, AttributeValue> exclusiveStartKey) {
-        DynamoDBQueryExpression<ProductReview> queryExpression = new DynamoDBQueryExpression<ProductReview>()
-                .withIndexName("ProductIdRatingIndex")
-                .withConsistentRead(false)
-                .withKeyConditionExpression("productId = :v_productId")
-                .withExpressionAttributeValues(Map.of(
-                        ":v_productId", new AttributeValue().withN(String.valueOf(productId))
-                ))
-                .withScanIndexForward(false) // 내림차순 정렬 (높은 rating 우선)
-                .withLimit(limit);           // 페이지당 항목 수 제한
-
-        // 이전 페이지의 마지막 키가 있다면 설정
-        if (exclusiveStartKey != null) {
-            queryExpression.setExclusiveStartKey(exclusiveStartKey);
+        // 숫자 타입으로 직접 전달
+        Key key = Key.builder()
+                .partitionValue(productId)
+                .build();
+        QueryEnhancedRequest request = QueryEnhancedRequest.builder()
+                .queryConditional(QueryConditional.keyEqualTo(key))
+                .build();
+        Iterator<Page<ProductReview>> pages = productIdRatingIndex.query(request).iterator();
+        List<ProductReview> reviews = new ArrayList<>();
+        while (pages.hasNext()) {
+            Page<ProductReview> page = pages.next();
+            reviews.addAll(page.items());
         }
-
-        return dynamoDBMapper.queryPage(ProductReview.class, queryExpression);
+        return reviews;
     }
 
+    public Page<ProductReview> findByProductIdWithPagination(Long productId, int limit, Key exclusiveStartKey) {
+        Key key = Key.builder()
+                .partitionValue(productId)
+                .build();
+        QueryEnhancedRequest.Builder requestBuilder = QueryEnhancedRequest.builder()
+                .queryConditional(QueryConditional.keyEqualTo(key))
+                .limit(limit)
+                .scanIndexForward(false); // 내림차순 정렬
+
+        if (exclusiveStartKey != null) {
+            requestBuilder.exclusiveStartKey(
+                    exclusiveStartKey.keyMap(productReviewTable.tableSchema(), "")
+            );
+        }
+        QueryEnhancedRequest request = requestBuilder.build();
+        Iterator<Page<ProductReview>> pages = productIdRatingIndex.query(request).iterator();
+        return pages.hasNext() ? pages.next() : null;
+    }
+
+    // userId로 조회 (인덱스 "UserIdIndex" 사용)
     public List<ProductReview> findByUserId(Long userId) {
-        DynamoDBQueryExpression<ProductReview> queryExpression = new DynamoDBQueryExpression<ProductReview>()
-                .withIndexName("UserIdIndex")
-                .withConsistentRead(false)
-                .withKeyConditionExpression("userId = :v_userId")
-                .withExpressionAttributeValues(Map.of(":v_userId", new AttributeValue().withN(String.valueOf(userId))));
-
-        return dynamoDBMapper.query(ProductReview.class, queryExpression);
+        Key key = Key.builder()
+                .partitionValue(userId)
+                .build();
+        QueryEnhancedRequest request = QueryEnhancedRequest.builder()
+                .queryConditional(QueryConditional.keyEqualTo(key))
+                .build();
+        Iterator<Page<ProductReview>> pages = userIdIndex.query(request).iterator();
+        List<ProductReview> reviews = new ArrayList<>();
+        while (pages.hasNext()) {
+            Page<ProductReview> page = pages.next();
+            reviews.addAll(page.items());
+        }
+        return reviews;
     }
 
+    // 복합키 조회: productId와 reviewId를 사용 (테이블의 기본키가 복합키라고 가정)
     public ProductReview loadReview(Long productId, Long reviewId) {
-        return dynamoDBMapper.load(ProductReview.class, productId, reviewId);
+        Key key = Key.builder()
+                .partitionValue(String.valueOf(productId))
+                .sortValue(String.valueOf(reviewId))
+                .build();
+        return productReviewTable.getItem(r -> r.key(key));
     }
 
+    // 삭제
     public void deleteReview(ProductReview review) {
-        dynamoDBMapper.delete(review);
+        productReviewTable.deleteItem(review);
     }
 }
