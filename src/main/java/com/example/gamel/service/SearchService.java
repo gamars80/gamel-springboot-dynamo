@@ -16,7 +16,6 @@ public class SearchService {
     private final SearchKeywordRepository searchKeywordRepository;
 
     public void recordSearch(String keyword) {
-        // 시간 단위 키 생성 (예: "2025-03-19-14")
         String timeKey = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"));
 
         Optional<SearchKeyword> existing = searchKeywordRepository.findByKeywordAndTimeKey(keyword, timeKey);

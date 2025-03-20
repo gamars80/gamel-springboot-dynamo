@@ -10,7 +10,11 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Repository
 @RequiredArgsConstructor
@@ -38,5 +42,17 @@ public class DynamoSearchKeywordRepository implements SearchKeywordRepository {
     @Override
     public void save(SearchKeyword searchKeyword) {
         table.putItem(searchKeyword);
+    }
+
+    public List<SearchKeyword> findRecentSearchKeywords(int minutesAgo) {
+        LocalDateTime thresholdTime = LocalDateTime.now().minusMinutes(minutesAgo);
+        String timePrefix = thresholdTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"));
+
+        // 전체 Scan 후 timeKey 기준 필터링 (정렬된 문자열 기준 비교)
+        return table.scan()
+                .items()
+                .stream()
+                .filter(item -> item.getTimeKey().compareTo(timePrefix) >= 0)
+                .collect(Collectors.toList());
     }
 }

@@ -8,7 +8,7 @@ import java.util.Optional;
 import com.example.gamel.dto.PaginatedProductReview;
 import com.example.gamel.entity.dynamo.ProductReview;
 import com.example.gamel.exceptions.ResourceNotFoundException;
-import com.example.gamel.repository.ProductReviewRepository;
+import com.example.gamel.repository.dynamo.ProductReviewRepository;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;

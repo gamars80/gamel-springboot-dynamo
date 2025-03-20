@@ -2,11 +2,14 @@ package com.example.gamel.contoller;
 
 import com.example.gamel.dto.PriceUpdateRequest;
 import com.example.gamel.dto.ProductDto;
+import com.example.gamel.entity.Product;
 import com.example.gamel.service.ProductService;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/products")
@@ -36,5 +39,11 @@ public class ProductController {
     public ResponseEntity<ProductDto> getProductDetail(@PathVariable Long id) {
         ProductDto productDto = productService.getProductDetail(id);
         return ResponseEntity.ok(productDto);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<Product>> searchProducts(@RequestParam String keyword) {
+        List<Product> products = productService.searchProducts(keyword);
+        return ResponseEntity.ok(products);
     }
 }

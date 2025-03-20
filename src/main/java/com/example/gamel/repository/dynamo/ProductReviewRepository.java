@@ -1,4 +1,4 @@
-package com.example.gamel.repository;
+package com.example.gamel.repository.dynamo;
 
 
 import com.example.gamel.entity.dynamo.ProductReview;
