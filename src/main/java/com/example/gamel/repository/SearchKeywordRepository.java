@@ -8,5 +8,5 @@ import java.util.Optional;
 public interface SearchKeywordRepository {
     Optional<SearchKeyword> findByKeywordAndTimeKey(String keyword, String timeKey);
     void save(SearchKeyword searchKeyword);
-    public List<SearchKeyword> findRecentSearchKeywords(int minutesAgo);
+    List<SearchKeyword> findRecentSearchKeywords(int minutesAgo);
 }

@@ -11,7 +11,7 @@ public class HotKeywordScheduler {
 
     private final HotKeywordReportService hotKeywordReportService;
 
-    @Scheduled(cron = "0 */10 * * * *") // 10분마다 실행
+    @Scheduled(cron = "0 */1 * * * *") // 1분마다 실행
     public void updateHotKeywords() {
         hotKeywordReportService.aggregateAndCacheHotKeywords();
     }

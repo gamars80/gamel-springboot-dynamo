@@ -3,6 +3,7 @@ package com.example.gamel.service;
 import com.example.gamel.entity.dynamo.SearchKeyword;
 import com.example.gamel.repository.SearchKeywordRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -14,6 +15,9 @@ import java.util.Optional;
 public class SearchService {
 
     private final SearchKeywordRepository searchKeywordRepository;
+    private final RedisTemplate<String, Object> redisTemplate; // RedisTemplate 주입
+
+    private static final String HOT_KEYWORDS_KEY = "hot_keywords";
 
     public void recordSearch(String keyword) {
         String timeKey = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"));
@@ -30,5 +34,7 @@ public class SearchService {
             newKeyword.setCount(1);
             searchKeywordRepository.save(newKeyword);
         }
+
+        redisTemplate.opsForZSet().incrementScore(HOT_KEYWORDS_KEY, keyword, 1);
     }
 }
