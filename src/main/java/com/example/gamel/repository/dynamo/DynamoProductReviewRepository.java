@@ -2,6 +2,9 @@ package com.example.gamel.repository.dynamo;
 
 
 import com.example.gamel.entity.dynamo.ProductReview;
+import com.example.gamel.repository.ProductReviewRepository;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.*;
 import software.amazon.awssdk.enhanced.dynamodb.model.Page;
@@ -11,29 +14,31 @@ import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
 @Repository
-public class ProductReviewRepository {
+@RequiredArgsConstructor
+public class DynamoProductReviewRepository implements ProductReviewRepository {
 
-    private final DynamoDbTable<ProductReview> productReviewTable;
-    private final DynamoDbIndex<ProductReview> productIdRatingIndex;
-    private final DynamoDbIndex<ProductReview> userIdIndex;
+    private final DynamoDbEnhancedClient enhancedClient;
 
-    public ProductReviewRepository(DynamoDbEnhancedClient enhancedClient) {
-        // 테이블 이름과 스키마는 실제 DynamoDB 설정에 맞게 변경하세요.
-        this.productReviewTable = enhancedClient.table("ProductReviews", TableSchema.fromBean(ProductReview.class));
+    // 파생 필드(초기화가 필요함)는 @PostConstruct에서 설정
+    private DynamoDbTable<ProductReview> productReviewTable;
+    private DynamoDbIndex<ProductReview> productIdRatingIndex;
+    private DynamoDbIndex<ProductReview> userIdIndex;
+
+    @PostConstruct
+    public void init() {
+        this.productReviewTable = enhancedClient.table("product_reviews", TableSchema.fromBean(ProductReview.class));
         this.productIdRatingIndex = productReviewTable.index("ProductIdRatingIndex");
         this.userIdIndex = productReviewTable.index("UserIdIndex");
     }
 
-
-    // 저장
+    @Override
     public void save(ProductReview review) {
         productReviewTable.putItem(review);
     }
 
+    @Override
     public List<ProductReview> findByProductId(Long productId) {
-        // 숫자 타입으로 직접 전달
         Key key = Key.builder()
                 .partitionValue(productId)
                 .build();
@@ -49,15 +54,13 @@ public class ProductReviewRepository {
         return reviews;
     }
 
+    @Override
     public Page<ProductReview> findByProductIdWithPagination(Long productId, int limit, Key exclusiveStartKey) {
-        Key key = Key.builder()
-                .partitionValue(productId)
-                .build();
+        Key key = Key.builder().partitionValue(productId).build();
         QueryEnhancedRequest.Builder requestBuilder = QueryEnhancedRequest.builder()
                 .queryConditional(QueryConditional.keyEqualTo(key))
                 .limit(limit)
-                .scanIndexForward(false); // 내림차순 정렬
-
+                .scanIndexForward(false);
         if (exclusiveStartKey != null) {
             requestBuilder.exclusiveStartKey(
                     exclusiveStartKey.keyMap(productReviewTable.tableSchema(), "")
@@ -68,11 +71,9 @@ public class ProductReviewRepository {
         return pages.hasNext() ? pages.next() : null;
     }
 
-    // userId로 조회 (인덱스 "UserIdIndex" 사용)
+    @Override
     public List<ProductReview> findByUserId(Long userId) {
-        Key key = Key.builder()
-                .partitionValue(userId)
-                .build();
+        Key key = Key.builder().partitionValue(userId).build();
         QueryEnhancedRequest request = QueryEnhancedRequest.builder()
                 .queryConditional(QueryConditional.keyEqualTo(key))
                 .build();
@@ -85,7 +86,7 @@ public class ProductReviewRepository {
         return reviews;
     }
 
-    // 복합키 조회: productId와 reviewId를 사용 (테이블의 기본키가 복합키라고 가정)
+    @Override
     public ProductReview loadReview(Long productId, Long reviewId) {
         Key key = Key.builder()
                 .partitionValue(String.valueOf(productId))
@@ -94,7 +95,7 @@ public class ProductReviewRepository {
         return productReviewTable.getItem(r -> r.key(key));
     }
 
-    // 삭제
+    @Override
     public void deleteReview(ProductReview review) {
         productReviewTable.deleteItem(review);
     }

@@ -10,7 +10,6 @@ public class ProductReviewDto {
     private Long userId;
     private Long rating;
     private String reviewText;
-    private String content;
     private String createdAt;
 
     public static ProductReviewDto fromEntity(ProductReview review) {
@@ -20,7 +19,6 @@ public class ProductReviewDto {
         dto.setUserId(review.getUserId());
         dto.setRating(review.getRating());
         dto.setReviewText(review.getReviewText());
-        dto.setContent(review.getContent());
         dto.setCreatedAt(review.getCreatedAt());
         return dto;
     }

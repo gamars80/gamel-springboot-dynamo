@@ -6,9 +6,13 @@ import java.util.Map;
 import java.util.Optional;
 
 import com.example.gamel.dto.PaginatedProductReview;
+import com.example.gamel.entity.Point;
 import com.example.gamel.entity.dynamo.ProductReview;
+import com.example.gamel.entity.dynamo.RewardPointHistory;
 import com.example.gamel.exceptions.ResourceNotFoundException;
-import com.example.gamel.repository.dynamo.ProductReviewRepository;
+import com.example.gamel.repository.PointRepository;
+import com.example.gamel.repository.RewardPointHistoryRepository;
+import com.example.gamel.repository.dynamo.DynamoProductReviewRepository;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
@@ -20,10 +24,37 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 @RequiredArgsConstructor
 public class ProductReviewService {
 
-    private final ProductReviewRepository productReviewRepository;
+    private final DynamoProductReviewRepository productReviewRepository;
+
+    private final DynamoProductReviewRepository reviewRepository;
+    private final PointRepository pointRepository; // MySQL 적립금 저장소
+    private final RewardPointHistoryRepository rewardPointHistoryRepository; // DynamoDB 보상 내역 저장소
+
 
     public void addReview(ProductReview review) {
-        productReviewRepository.save(review);
+        // 1. 리뷰 저장
+        reviewRepository.save(review);
+
+        // 2. 보상 내역 생성 (예: 고정 10점 지급)
+        Point reward = Point.create(review.getUserId(), review.getProductId(), review.getReviewId(), 10);
+
+        Point savedReward = null;
+        try {
+            // 3. MySQL에 보상 적립금 저장
+            savedReward = pointRepository.save(reward);
+
+            // 4. DynamoDB에 보상 내역 저장
+            RewardPointHistory rewardPointHistory = new RewardPointHistory();
+            rewardPointHistory.setUserId(savedReward.getUserId());
+            rewardPointHistory.setReviewId(savedReward.getReviewId());
+            rewardPointHistory.setProductId(savedReward.getProductId());
+            rewardPointHistory.setPoints(savedReward.getPoints());
+            rewardPointHistoryRepository.save(rewardPointHistory);
+        } catch (Exception e) {
+            // 어느 단계라도 실패하면 보상(롤백) 처리
+            rollback(review, savedReward);
+            throw new RuntimeException("리뷰 등록 및 보상 처리 실패: " + e.getMessage(), e);
+        }
     }
 
     public List<ProductReview> getReviewsByProductId(Long productId) {
@@ -81,6 +112,23 @@ public class ProductReviewService {
             }
         }
         return simpleMap;
+    }
+
+    private void rollback(ProductReview review, Point savedReward) {
+        // 보상 내역(MySQL)이 저장되었다면 삭제 시도
+        if (savedReward != null) {
+            try {
+                pointRepository.deleteById(savedReward.getId());
+            } catch (Exception ex) {
+                System.err.println("MySQL 보상 롤백 실패: " + ex.getMessage());
+            }
+        }
+        // 리뷰 등록된 내용 삭제 시도
+        try {
+            reviewRepository.deleteReview(review);
+        } catch (Exception ex) {
+            System.err.println("리뷰 롤백 실패: " + ex.getMessage());
+        }
     }
 }
 
