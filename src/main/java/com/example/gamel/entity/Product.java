@@ -19,9 +19,11 @@ public class Product {
     private Long categoryId;
     private String name;
     private String description;
-
+    @Column(name = "thumbnail_url")
+    private String thumbnailUrl;
 
     private int price;
+    private Integer stock;
 
     public static Product create(Long categoryId, String name, String description, int price) {
         Product product = new Product();

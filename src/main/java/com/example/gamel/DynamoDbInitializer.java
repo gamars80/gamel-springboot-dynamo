@@ -22,6 +22,7 @@ public class DynamoDbInitializer {
         createSearchKeywordTable(tableNames);
         createProductReviewTable(tableNames);
         createRewardPointHistoryTable(tableNames);
+        createShoppingCartTable(tableNames);
     }
 
     private void createSearchKeywordTable(List<String> existingTables) {
@@ -119,6 +120,30 @@ public class DynamoDbInitializer {
                                 .readCapacityUnits(5L)
                                 .writeCapacityUnits(5L)
                                 .build()
+                )
+                .build();
+
+        dynamoDbClient.createTable(request);
+        waitForTableToBecomeActive(tableName);
+        System.out.println("✅ Created table: " + tableName);
+    }
+
+    private void createShoppingCartTable(List<String> existingTables) {
+        String tableName = "ShoppingCart";
+        if (existingTables.contains(tableName)) return;
+
+        CreateTableRequest request = CreateTableRequest.builder()
+                .tableName(tableName)
+                .keySchema(
+                        KeySchemaElement.builder().attributeName("userId").keyType(KeyType.HASH).build(),
+                        KeySchemaElement.builder().attributeName("productId").keyType(KeyType.RANGE).build()
+                )
+                .attributeDefinitions(
+                        AttributeDefinition.builder().attributeName("userId").attributeType(ScalarAttributeType.S).build(),
+                        AttributeDefinition.builder().attributeName("productId").attributeType(ScalarAttributeType.S).build()
+                )
+                .provisionedThroughput(
+                        ProvisionedThroughput.builder().readCapacityUnits(5L).writeCapacityUnits(5L).build()
                 )
                 .build();
 
