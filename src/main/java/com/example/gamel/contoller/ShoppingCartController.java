@@ -1,6 +1,7 @@
 package com.example.gamel.contoller;
 
 import com.example.gamel.dto.CartItemRequest;
+import com.example.gamel.dto.CartItemResponse;
 import com.example.gamel.service.ShoppingCartService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -24,8 +25,8 @@ public class ShoppingCartController {
 
     // 2. 사용자 장바구니 목록 조회
     @GetMapping("/{userId}")
-    public ResponseEntity<List<ShoppingCartService.CartItemResponse>> getCartItems(@PathVariable String userId) {
-        List<ShoppingCartService.CartItemResponse> items = shoppingCartService.getCartItems(userId);
+    public ResponseEntity<List<CartItemResponse>> getCartItems(@PathVariable String userId) {
+        List<CartItemResponse> items = shoppingCartService.getCartItems(userId);
         return ResponseEntity.ok(items);
     }
 

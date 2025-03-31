@@ -2,6 +2,7 @@ package com.example.gamel.service;
 
 
 import com.example.gamel.annotaion.DistributedLock;
+import com.example.gamel.dto.CartItemResponse;
 import com.example.gamel.entity.Product;
 import com.example.gamel.entity.dynamo.ShoppingCartItem;
 import com.example.gamel.repository.ProductRepository;
@@ -102,11 +103,4 @@ public class ShoppingCartService {
         table.deleteItem(r -> r.key(key));
     }
 
-    @lombok.Value
-    public static class CartItemResponse {
-        String productName;
-        String thumbnailUrl;
-        Integer price;
-        Integer quantity;
-    }
 }
